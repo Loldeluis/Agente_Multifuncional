@@ -21,16 +21,12 @@ OLLAMA_URL = "http://127.0.0.1:11434"
 # ==============================
 # CONSULTA HTTP A OLLAMA
 # ==============================
-
 def _try_http(
     prompt: str,
     model: str = MODEL,
-    timeout: int = 300,
+    timeout: int = 600,
     format_json: bool = False
 ) -> Optional[str]:
-    """
-    Consulta Ollama mediante su API local.
-    """
 
     if requests is None:
         return None
@@ -43,32 +39,61 @@ def _try_http(
         "stream": False
     }
 
-    # Fuerza la respuesta en formato JSON
     if format_json:
         payload["format"] = "json"
 
     try:
+
         response = requests.post(
             url,
             json=payload,
-            timeout=(10, timeout)
+            timeout=timeout
         )
 
-        response.raise_for_status()
+        # Mostrar el error real de Ollama
+        if response.status_code != 200:
+
+            print(
+                "\n❌ ERROR RESPONDIDO POR OLLAMA"
+            )
+
+            print(
+                f"Status: {response.status_code}"
+            )
+
+            print(
+                f"Respuesta: {response.text}"
+            )
+
+            return None
 
         data = response.json()
 
-        respuesta = data.get("response")
+        return data.get("response")
 
-        if respuesta:
-            return respuesta.strip()
+    except requests.exceptions.Timeout:
+
+        print(
+            "\n⏳ Ollama tardó demasiado en responder."
+        )
 
         return None
 
-    except requests.exceptions.RequestException as e:
-        print(f"\nError conectando con Ollama: {e}\n")
+    except requests.exceptions.ConnectionError:
+
+        print(
+            "\n🔌 No fue posible conectar con Ollama."
+        )
+
         return None
 
+    except Exception as e:
+
+        print(
+            f"\n❌ Error inesperado con Ollama: {e}"
+        )
+
+        return None
 
 # ==============================
 # FALLBACK CLI
@@ -77,7 +102,7 @@ def _try_http(
 def _try_cli(
     prompt: str,
     model: str = MODEL,
-    timeout: int = 300
+    timeout: int = 400
 ) -> Optional[str]:
     """
     Intenta consultar Ollama mediante la CLI.
