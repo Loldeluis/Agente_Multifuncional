@@ -1,39 +1,73 @@
-from agents.image_agent import procesar_imagen
-from agents.audio_agent import procesar_audio
-from agents.integration_agent import integrar_datos
-from agents.report_agent import generar_informe
+from agents.voice_controller import ejecutar_comando_voz
+
+
+def mostrar_banner():
+
+    print("\n")
+    print("==============================================")
+    print("          AGENTE MULTIMODAL V2.0")
+    print("==============================================")
+    print("        Sistema multimodal con IA")
+    print("==============================================")
 
 
 def main():
 
-    print("Procesando imagen...")
+    mostrar_banner()
 
-    datos_imagen = procesar_imagen(
-        "data/input/imagen.jpg"
-    )
+    print("\n🎤 Modo asistente de voz")
+    print("Habla para indicarle al sistema qué deseas hacer.")
+    print("Di 'Salir' para finalizar.\n")
 
-    print(datos_imagen)
+    while True:
 
-    print("\nProcesando audio...")
+        input(
+            "Presiona ENTER para hablar..."
+        )
 
-    datos_audio = procesar_audio(
-        "data/input/audio.mp3"
-    )
+        try:
 
-    print(datos_audio)
+            resultado = ejecutar_comando_voz()
 
-    print("\nIntegrando información...")
+            print("\n📦 Resultado:")
+            print(resultado)
 
-    datos = integrar_datos(
-        datos_imagen,
-        datos_audio
-    )
+            # --------------------------------------
+            # Verificar si debemos terminar
+            # --------------------------------------
 
-    print("\nGenerando informe con Gemma...")
+            if isinstance(resultado, dict):
 
-    informe = generar_informe(datos)
+                texto = str(
+                    resultado.get(
+                        "accion",
+                        ""
+                    )
+                ).lower()
 
-    print(informe)
+                if texto == "Salir":
+
+                    print(
+                        "\n👋 Cerrando asistente..."
+                    )
+
+                    break
+
+        except KeyboardInterrupt:
+
+            print(
+                "\n\n👋 Programa finalizado."
+            )
+
+            break
+
+        except Exception as e:
+
+            print(
+                "\n❌ Ocurrió un error:"
+            )
+
+            print(e)
 
 
 if __name__ == "__main__":

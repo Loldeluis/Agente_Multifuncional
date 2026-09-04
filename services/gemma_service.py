@@ -3,6 +3,11 @@ import subprocess
 import os
 import shutil
 from typing import Optional
+from config.settings import (
+    GEMMA_MODEL,
+    OLLAMA_URL,
+    OLLAMA_TIMEOUT
+)
 
 try:
     import requests
@@ -14,8 +19,9 @@ except ImportError:
 # CONFIGURACIÓN
 # ==============================
 
-MODEL = "gemma3:4b"
-OLLAMA_URL = "http://127.0.0.1:11434"
+MODEL = GEMMA_MODEL
+OLLAMA_URL = OLLAMA_URL
+OLLAMA_TIMEOUT = OLLAMA_TIMEOUT
 
 
 # ==============================
@@ -25,7 +31,8 @@ def _try_http(
     prompt: str,
     model: str = MODEL,
     timeout: int = 600,
-    format_json: bool = False
+    format_json: bool = False,
+    options: Optional[dict] = None
 ) -> Optional[str]:
 
     if requests is None:
@@ -41,6 +48,9 @@ def _try_http(
 
     if format_json:
         payload["format"] = "json"
+
+    if options:
+        payload["options"] = options
 
     try:
 
@@ -156,7 +166,8 @@ def _try_cli(
 def consultar_gemma(
     prompt: str,
     model: str = MODEL,
-    formato_json: bool = False
+    formato_json: bool = False,
+    opciones: Optional[dict] = None
 ) -> str:
     """
     Consulta Gemma mediante Ollama.
@@ -172,7 +183,8 @@ def consultar_gemma(
     respuesta = _try_http(
         prompt,
         model=model,
-        format_json=formato_json
+        format_json=formato_json,
+        options=opciones
     )
 
     if respuesta:
@@ -232,7 +244,8 @@ def _limpiar_json(texto: str) -> str:
 
 def consultar_gemma_json(
     prompt: str,
-    model: str = MODEL
+    model: str = MODEL,
+    opciones: Optional[dict] = None
 ) -> dict:
     """
     Consulta Gemma solicitando JSON estructurado
@@ -242,7 +255,8 @@ def consultar_gemma_json(
     respuesta = consultar_gemma(
         prompt,
         model=model,
-        formato_json=True
+        formato_json=True,
+        opciones=opciones
     )
 
     if not respuesta:

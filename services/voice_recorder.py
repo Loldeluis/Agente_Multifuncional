@@ -1,59 +1,209 @@
 import os
+import queue
 
+import numpy as np
 import sounddevice as sd
 from scipy.io.wavfile import write
+from config.settings import (
+    VOICE_SAMPLE_RATE,
+    VOICE_CHANNELS,
+    VOICE_BLOCK_SIZE,
+    VOICE_SILENCE_THRESHOLD,
+    VOICE_SILENCE_DURATION,
+    VOICE_MAX_DURATION
+)
 
 
-SAMPLE_RATE = 16000
-CHANNELS = 1
+def _seleccionar_dispositivo_entrada():
+    """Elige el dispositivo real de entrada preferido para los auriculares JBL."""
+    try:
+        dispositivos = sd.query_devices()
+    except Exception:
+        return None
+
+    if dispositivos is None:
+        return None
+
+    tokens_preferidos = [
+        "jbl",
+        "wave beam",
+        "auriculares con micrófono",
+        "headset",
+        "bluetooth"
+    ]
+
+    for indice, dispositivo in enumerate(dispositivos):
+        if not isinstance(dispositivo, dict):
+            continue
+
+        nombre = str(dispositivo.get("name", "")).lower()
+        canales = int(dispositivo.get("max_input_channels", 0) or 0)
+
+        if canales <= 0:
+            continue
+
+        if any(token in nombre for token in tokens_preferidos):
+            return indice
+
+    for indice, dispositivo in enumerate(dispositivos):
+        if not isinstance(dispositivo, dict):
+            continue
+
+        nombre = str(dispositivo.get("name", "")).lower()
+        canales = int(dispositivo.get("max_input_channels", 0) or 0)
+
+        if canales <= 0:
+            continue
+
+        if any(token in nombre for token in ["output", "speaker", "altavoces", "playback"]):
+            continue
+
+        if any(token in nombre for token in ["asignador de sonido", "microsoft - input", "virtual", "loopback"]):
+            continue
+
+        return indice
+
+    for indice, dispositivo in enumerate(dispositivos):
+        if not isinstance(dispositivo, dict):
+            continue
+
+        canales = int(dispositivo.get("max_input_channels", 0) or 0)
+        if canales > 0:
+            return indice
+
+    return None
 
 
-def grabar_audio(
+def grabar_audio_hasta_silencio(
     ruta_salida: str,
-    duracion: int = 7
+    samplerate: int = VOICE_SAMPLE_RATE,
+    canales: int = VOICE_CHANNELS,
+    bloque: int = VOICE_BLOCK_SIZE,
+    umbral_silencio: float = VOICE_SILENCE_THRESHOLD,
+    silencio_maximo: float = VOICE_SILENCE_DURATION,
+    tiempo_maximo: float = VOICE_MAX_DURATION
 ):
     """
-    Graba audio desde el micrófono y lo guarda
-    como archivo WAV.
+    Graba audio hasta detectar silencio después
+    de que el usuario haya comenzado a hablar.
+
+    Parámetros:
+    - umbral_silencio: sensibilidad para detectar sonido.
+    - silencio_maximo: segundos de silencio antes de detener.
+    - tiempo_maximo: límite de seguridad de grabación.
     """
 
     print("\n🎙️ Preparando micrófono...")
-    print(f"Duración: {duracion} segundos")
+    print("🎤 Habla cuando estés listo...")
 
-    try:
+    os.makedirs(
+        os.path.dirname(ruta_salida),
+        exist_ok=True
+    )
 
-        print("\n🎙️ Grabando...")
+    cola_audio = queue.Queue()
+    fragmentos = []
 
-        audio = sd.rec(
-            int(duracion * SAMPLE_RATE),
-            samplerate=SAMPLE_RATE,
-            channels=CHANNELS,
-            dtype="int16"
+    usuario_hablo = False
+    bloques_silencio = 0
+
+    bloques_necesarios_silencio = int(
+        (silencio_maximo * samplerate) / bloque
+    )
+
+    bloques_maximos = int(
+        (tiempo_maximo * samplerate) / bloque
+    )
+
+    def callback(
+        indata,
+        frames,
+        time,
+        status
+    ):
+        if status:
+            print(f"⚠️ Audio: {status}")
+
+        cola_audio.put(
+            indata.copy()
         )
 
-        sd.wait()
+    print("\n🎙️ Escuchando...")
 
-    except Exception as e:
+    dispositivo_entrada = _seleccionar_dispositivo_entrada()
+    if dispositivo_entrada is not None:
+        print(f"📻 Micrófono seleccionado: índice {dispositivo_entrada}")
 
-        raise RuntimeError(
-            f"No fue posible acceder al micrófono: {e}"
+    with sd.InputStream(
+        samplerate=samplerate,
+        channels=canales,
+        blocksize=bloque,
+        device=dispositivo_entrada,
+        callback=callback
+    ):
+
+        for _ in range(bloques_maximos):
+
+            datos = cola_audio.get()
+
+            volumen = np.linalg.norm(
+                datos
+            )
+
+            fragmentos.append(
+                datos
+            )
+
+            if volumen > umbral_silencio:
+
+                if not usuario_hablo:
+
+                    print(
+                        "🗣️ Voz detectada..."
+                    )
+
+                    usuario_hablo = True
+
+                bloques_silencio = 0
+
+            elif usuario_hablo:
+
+                bloques_silencio += 1
+
+                if (
+                    bloques_silencio
+                    >= bloques_necesarios_silencio
+                ):
+
+                    print(
+                        "🔇 Silencio detectado."
+                    )
+
+                    break
+
+    if not usuario_hablo:
+
+        raise ValueError(
+            "No se detectó ninguna voz."
         )
 
-    carpeta = os.path.dirname(ruta_salida)
-
-    if carpeta:
-        os.makedirs(
-            carpeta,
-            exist_ok=True
-        )
+    audio_final = np.concatenate(
+        fragmentos,
+        axis=0
+    )
 
     write(
         ruta_salida,
-        SAMPLE_RATE,
-        audio
+        samplerate,
+        audio_final
     )
 
-    print("\n✅ Grabación finalizada.")
-    print(f"📁 Archivo: {ruta_salida}")
+    print(
+        "✅ Grabación finalizada."
+    )
+
+    print(
+        f"📁 Archivo: {ruta_salida}"
+    )
 
     return ruta_salida

@@ -3,7 +3,7 @@ import os
 import whisper
 
 from services.voice_recorder import (
-    grabar_audio
+    grabar_audio_hasta_silencio
 )
 
 
@@ -26,9 +26,8 @@ input(
 
 print("\n🎙️ Grabando...")
 
-ruta = grabar_audio(
-    RUTA_AUDIO,
-    duracion=7
+ruta = grabar_audio_hasta_silencio(
+    RUTA_AUDIO
 )
 
 

@@ -1,21 +1,34 @@
-from services.voice_recorder import grabar_audio
-from services.whisper_service import transcribir_audio
+from services.voice_recorder import (
+    grabar_audio_hasta_silencio
+)
 
-from agents.voice_agent import interpretar_comando
-from agents.orchestrator_agent import ejecutar_intencion
-from agents.agent_executor import ejecutar_agente
+from services.whisper_service import (
+    transcribir_audio
+)
 
+from agents.voice_agent import (
+    interpretar_comando
+)
 
-RUTA_AUDIO = "data/temp/voz_actual.wav"
+from agents.orchestrator_agent import (
+    ejecutar_intencion
+)
 
+from agents.agent_executor import (
+    ejecutar_agente
+)
 
-def ejecutar_comando_voz(
-    duracion: int = 7
-):
+from config.settings import (
+    VOICE_TEMP_PATH
+)
+
+def ejecutar_comando_voz():
     """
-    Ejecuta el flujo completo:
+    Ejecuta el flujo completo de voz:
 
     Micrófono
+        ↓
+    Detección automática de silencio
         ↓
     Whisper
         ↓
@@ -34,11 +47,10 @@ def ejecutar_comando_voz(
     # 1. GRABAR
     # ==========================================
 
-    print("\n🎙️ Paso 1/5 - Capturando voz...")
+    print("\n🎙️ Paso 1/5 - Escuchando comando...")
 
-    grabar_audio(
-        RUTA_AUDIO,
-        duracion=duracion
+    grabar_audio_hasta_silencio(
+        ruta_salida=VOICE_TEMP_PATH
     )
 
     # ==========================================
@@ -48,7 +60,7 @@ def ejecutar_comando_voz(
     print("\n🧠 Paso 2/5 - Procesando voz...")
 
     texto = transcribir_audio(
-        RUTA_AUDIO,
+        ruta_audio=VOICE_TEMP_PATH,
         idioma="es"
     )
 

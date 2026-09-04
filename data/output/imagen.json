@@ -1,23 +1,23 @@
 {
     "fuente": "imagen",
-    "tipo_contenido": "ilustración",
-    "descripcion_general": "Ilustración que explica cómo convertir una imagen a texto utilizando OCR (Reconocimiento Óptico de Caracteres).",
+    "tipo_contenido": "ilustracion",
+    "descripcion_general": "Ilustración que muestra el proceso de convertir una imagen a texto (OCR).",
     "texto_detectado": [
         "¿CÓMO CONVERTIR",
         "UNA IMAGEN",
-        "A TEXTO?"
+        "A TEXTO?",
+        "Imagenatexto.io"
     ],
     "objetos_detectados": [
-        "laptop",
+        "mujer",
+        "ordenador",
+        "escritura",
+        "icono de nube",
         "documento",
-        "libro",
-        "flecha",
-        "persona",
-        "icono de lupa",
-        "escritorio"
+        "icono de lupa"
     ],
     "datos_relevantes": {
-        "URL_sitio_web": "Imagenaxtexto.io"
+        "idioma": "español"
     },
     "nivel_confianza": "alto"
 }

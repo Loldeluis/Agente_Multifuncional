@@ -18,13 +18,18 @@ while True:
         "\nPresiona ENTER para hablar..."
     )
 
-    resultado = ejecutar_comando_voz(
-        duracion=7
-    )
+    try:
 
-    print("\n📦 Resultado:")
+        resultado = ejecutar_comando_voz()
 
-    print(resultado)
+        print("\n📦 Resultado:")
+        print(resultado)
+
+    except Exception as e:
+
+        print(
+            f"\n❌ Ocurrió un error: {e}"
+        )
 
     continuar = input(
         "\n¿Deseas dar otro comando? (s/n): "

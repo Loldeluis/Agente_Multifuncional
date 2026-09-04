@@ -68,6 +68,12 @@ Respuesta:
 }}
 """
 
-    resultado = consultar_gemma_json(prompt)
+    resultado = consultar_gemma_json(
+        prompt,
+        opciones={
+            "temperature": 0,
+            "num_predict": 128
+        }
+    )
 
     return resultado

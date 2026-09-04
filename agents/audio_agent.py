@@ -1,11 +1,21 @@
-import whisper
 import json
+
+try:
+    import whisper
+except Exception as exc:  # pragma: no cover - local native environment issue
+    whisper = None
+    _WHISPER_IMPORT_ERROR = exc
+else:
+    _WHISPER_IMPORT_ERROR = None
 
 from services.gemma_service import consultar_gemma_json
 
 
 # Cargar modelo una sola vez
-modelo_whisper = whisper.load_model("base")
+if whisper is not None:
+    modelo_whisper = whisper.load_model("base")
+else:
+    modelo_whisper = None
 
 
 def procesar_audio(ruta_audio: str) -> dict:
@@ -14,6 +24,13 @@ def procesar_audio(ruta_audio: str) -> dict:
     
     Audio → Whisper → Transcripción → Gemma → JSON
     """
+
+    if whisper is None:
+        raise RuntimeError(
+            "Whisper no está disponible en este entorno. "
+            "La librería nativa de Whisper/Numba falló al cargar. "
+            "Recrea el entorno con Python 3.11/3.12 o reinstala Whisper."
+        ) from _WHISPER_IMPORT_ERROR
 
     print("[1/4] Transcribiendo audio...")
 

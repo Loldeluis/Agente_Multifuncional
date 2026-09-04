@@ -4,6 +4,12 @@ import os
 from agents.report_agent import generar_informe
 from services.pdf_service import generar_pdf
 
+from services.agent_result import (
+    resultado_exitoso,
+    resultado_error,
+    resultado_pendiente
+)
+
 
 def ejecutar_agente(
     agente: str,
@@ -19,19 +25,19 @@ def ejecutar_agente(
 
         print("\n📄 Ejecutando Report Agent...")
 
-        ruta_consolidado = os.path.join(
-            "data",
-            "output",
-            "consolidado.json"
-        )
-
-        ruta_pdf = os.path.join(
-            "data",
-            "output",
-            "informe_voz.pdf"
-        )
-
         try:
+
+            ruta_consolidado = os.path.join(
+                "data",
+                "output",
+                "consolidado.json"
+            )
+
+            ruta_pdf = os.path.join(
+                "data",
+                "output",
+                "informe_voz.pdf"
+            )
 
             # ----------------------------------
             # Generar informe
@@ -50,23 +56,23 @@ def ejecutar_agente(
                 ruta_pdf
             )
 
-            return {
-                "estado": "completado",
-                "agente": "report_agent",
-                "accion": accion,
-                "datos": datos,
-                "archivo": ruta_pdf
-            }
+            return resultado_exitoso(
+                agente="report_agent",
+                accion=accion,
+                datos=datos,
+                resultado={
+                    "archivo": ruta_pdf
+                }
+            )
 
         except Exception as e:
 
-            return {
-                "estado": "error",
-                "agente": "report_agent",
-                "accion": accion,
-                "datos": datos,
-                "error": str(e)
-            }
+            return resultado_error(
+                agente="report_agent",
+                accion=accion,
+                error=str(e),
+                datos=datos
+            )
 
     # ==========================================
     # GRAPH AGENT
@@ -76,12 +82,11 @@ def ejecutar_agente(
 
         print("\n🕸️ Ejecutando Graph Agent...")
 
-        return {
-            "estado": "pendiente",
-            "agente": "graph_agent",
-            "accion": accion,
-            "datos": datos
-        }
+        return resultado_pendiente(
+            agente="graph_agent",
+            accion=accion,
+            datos=datos
+        )
 
     # ==========================================
     # KNOWLEDGE AGENT
@@ -91,12 +96,11 @@ def ejecutar_agente(
 
         print("\n🧠 Ejecutando Knowledge Agent...")
 
-        return {
-            "estado": "pendiente",
-            "agente": "knowledge_agent",
-            "accion": accion,
-            "datos": datos
-        }
+        return resultado_pendiente(
+            agente="knowledge_agent",
+            accion=accion,
+            datos=datos
+        )
 
     # ==========================================
     # IMAGE AGENT
@@ -106,12 +110,11 @@ def ejecutar_agente(
 
         print("\n🖼️ Ejecutando Image Agent...")
 
-        return {
-            "estado": "pendiente",
-            "agente": "image_agent",
-            "accion": accion,
-            "datos": datos
-        }
+        return resultado_pendiente(
+            agente="image_agent",
+            accion=accion,
+            datos=datos
+        )
 
     # ==========================================
     # AUDIO AGENT
@@ -121,21 +124,19 @@ def ejecutar_agente(
 
         print("\n🎧 Ejecutando Audio Agent...")
 
-        return {
-            "estado": "pendiente",
-            "agente": "audio_agent",
-            "accion": accion,
-            "datos": datos
-        }
+        return resultado_pendiente(
+            agente="audio_agent",
+            accion=accion,
+            datos=datos
+        )
 
     # ==========================================
     # DESCONOCIDO
     # ==========================================
 
-    return {
-        "estado": "error",
-        "agente": None,
-        "accion": "desconocido",
-        "datos": datos,
-        "mensaje": "No existe un agente asociado."
-    }
+    return resultado_error(
+        agente=agente or "desconocido",
+        accion=accion or "desconocida",
+        error="No existe un agente asociado.",
+        datos=datos
+    )
